@@ -11,7 +11,7 @@ DB_CONFIG = {
     "port": "3306", # Remplacez par l'adresse de votre serveur MySQL
     "user": "admin",       # Remplacez par votre nom d'utilisateur MySQL
     "password": "12345678",      # Remplacez par votre mot de passe MySQL
-    "database": "database-batman"
+    "database": "zoodebatman"
 }
 
 # Modèle pour les entrées
