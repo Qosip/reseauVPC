@@ -7,7 +7,7 @@ app = FastAPI()
 
 # Configuration de la base de données MySQL
 DB_CONFIG = {
-    "host": "localhost",
+    "host": "database-batman.cfuuga8yy07s.eu-west-2.rds.amazonaws.com",
     "port": "3306", # Remplacez par l'adresse de votre serveur MySQL
     "user": "admin",       # Remplacez par votre nom d'utilisateur MySQL
     "password": "12345678",      # Remplacez par votre mot de passe MySQL
@@ -19,7 +19,7 @@ class Animal(BaseModel):
     nom: str
     description: str
     image: str
-    decors: str
+    decor: str
 
 # Connexion à la base de données
 def get_db_connection():
@@ -72,8 +72,8 @@ def add_animal(animal: Animal):
     connection = get_db_connection()
     cursor = connection.cursor()
     cursor.execute(
-        "INSERT INTO animaux (nom, description, image, decors) VALUES (%s, %s, %s, %s)",
-        (animal.nom, animal.description, animal.image, animal.decors)
+        "INSERT INTO animaux (nom, description, image, decor) VALUES (%s, %s, %s, %s)",
+        (animal.nom, animal.description, animal.image, animal.decor)
     )
     connection.commit()
     new_id = cursor.lastrowid
