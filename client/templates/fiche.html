@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiche de l'Animal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #007bff;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        main {
+            padding: 1rem;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            text-decoration: none;
+            color: #007bff;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Fiche de l'Animal</h1>
+    </header>
+    <main>
+        {% if animal %}
+            <h2>{{ animal.nom }}</h2>
+            <img src="{{ animal.image }}" alt="{{ animal.nom }}">
+            <p><strong>Description :</strong> {{ animal.description }}</p>
+            <p><strong>Décors :</strong> {{ animal.decor }}</p>
+        {% else %}
+            <p>Erreur : Aucun animal trouvé.</p>
+        {% endif %}
+        <a class="back-link" href="/">&larr; Retour à la liste</a>
+    </main>
+</body>
+</html>
