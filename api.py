@@ -1,61 +1,94 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
-from typing import List, Optional
+import mysql.connector
 
+# Initialisation de l'application FastAPI
 app = FastAPI()
 
-# Modèle pour les données
-class Item(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-    price: float
-    on_sale: bool
+# Configuration de la base de données MySQL
+DB_CONFIG = {
+    "host": "localhost",
+    "port": "3307", # Remplacez par l'adresse de votre serveur MySQL
+    "user": "root",       # Remplacez par votre nom d'utilisateur MySQL
+    "password": "example",      # Remplacez par votre mot de passe MySQL
+    "database": "pettitzoo"
+}
 
-# Base de données simulée
-fake_database = {}
+# Modèle pour les entrées
+class Animal(BaseModel):
+    nom: str
+    description: str
+    image: str
+    decors: str
 
+# Connexion à la base de données
+def get_db_connection():
+    connect = mysql.connector.connect(**DB_CONFIG)
+    cursor = connect.cursor()
+    cursor.execute("""
+                   CREATE TABLE IF NOT EXISTS `animaux` (
+                `id` int NOT NULL AUTO_INCREMENT,
+                `nom` varchar(250) NOT NULL,
+                `description` text NOT NULL,
+                `image` varchar(250) NOT NULL,
+                `decor` varchar(250) NOT NULL,
+                PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+                   """)
+
+
+    return connect
+
+# Endpoint : teste le démarrage de l'API
 @app.get("/")
-async def index():
-    return {"message": "Bienvenue sur notre API FastAPI !"}
+def test_demarrage():
+    return {"serveur" : "démarré"}
 
-@app.get("/test")
-async def test():
-    return {"message": "Ceci est un test."}
+# Endpoint : Liste de tous les noms d'animaux
+@app.get("/animaux/noms")
+def get_all_animal_names():
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("SELECT nom FROM animaux")
+    noms = cursor.fetchall()
+    connection.close()
+    return [nom[0] for nom in noms]
 
-# Endpoint pour récupérer tous les items
-@app.get("/items", response_model=List[Item])
-async def get_items():
-    return list(fake_database.values())
+# Endpoint : Toutes les données d'un animal suivant son ID
+@app.get("/animaux/{animal_id}")
+def get_animal_by_id(animal_id: int):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM animaux WHERE id = %s", (animal_id,))
+    animal = cursor.fetchone()
+    connection.close()
+    if not animal:
+        raise HTTPException(status_code=404, detail="Animal non trouvé")
+    return animal
 
-# Endpoint pour récupérer un item spécifique
-@app.get("/items/{item_id}", response_model=Item)
-async def get_item(item_id: int):
-    item = fake_database.get(item_id)
-    if item is None:
-        raise HTTPException(status_code=404, detail="Item non trouvé")
-    return item
+# Endpoint : Ajout d'un nouvel animal
+@app.post("/animaux")
+def add_animal(animal: Animal):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute(
+        "INSERT INTO animaux (nom, description, image, decors) VALUES (%s, %s, %s, %s)",
+        (animal.nom, animal.description, animal.image, animal.decors)
+    )
+    connection.commit()
+    new_id = cursor.lastrowid
+    connection.close()
+    return {"id": new_id, "message": "Animal ajouté avec succès"}
 
-# Endpoint pour ajouter un nouvel item
-@app.post("/items", response_model=Item)
-async def create_item(item: Item):
-    if item.id in fake_database:
-        raise HTTPException(status_code=400, detail="Item avec cet ID existe déjà")
-    fake_database[item.id] = item
-    return item
-
-# Endpoint pour mettre à jour un item existant
-@app.put("/items/{item_id}", response_model=Item)
-async def update_item(item_id: int, updated_item: Item):
-    if item_id not in fake_database:
-        raise HTTPException(status_code=404, detail="Item non trouvé")
-    fake_database[item_id] = updated_item
-    return updated_item
-
-# Endpoint pour supprimer un item
-@app.delete("/items/{item_id}")
-async def delete_item(item_id: int):
-    if item_id not in fake_database:
-        raise HTTPException(status_code=404, detail="Item non trouvé")
-    del fake_database[item_id]
-    return {"message": f"L'item avec l'ID {item_id} a été supprimé."}
+# Endpoint : Supprimer un animal suivant son ID
+@app.delete("/animaux/{animal_id}")
+def delete_animal(animal_id: int):
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM animaux WHERE id = %s", (animal_id,))
+    connection.commit()
+    affected_rows = cursor.rowcount
+    connection.close()
+    if affected_rows == 0:
+        raise HTTPException(status_code=404, detail="Animal non trouvé")
+    return {"message": "Animal supprimé avec succès"}
